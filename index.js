@@ -10,9 +10,23 @@ var canvasFrameManipulate;
 video.setAttribute('playsinline', '');
 video.setAttribute('autoplay', '');
 video.setAttribute('muted', '');
+const frameRate = 10; //lower is smoother, but more cpu intensive
+var darkMode = false;
 video.style.width = windowWidth+'px';
 video.style.height = windowHeight+'px';
 window.onresize = resizeCanvas;
+/* Setting up the constraint */
+var facingMode = "user"; // Can be 'user' or 'environment' to access back or front camera (NEAT!)
+var constraints = {
+  audio: false,
+  video: {
+  facingMode: "user"
+  }
+};
+//document.body.appendChild(video);
+
+
+
 
 function resizeCanvas()
 {
@@ -31,19 +45,29 @@ function grabFrame()
     for(i=0; i<imageData.data.length; i+=4){
       let avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2])/3;
       
-      if(avg>125){
-        charArray[charArrayIndex] = "H";
-      }
-      else{
-        charArray[charArrayIndex] = "*";
-      }
+
+      charArray[charArrayIndex] = brightChar(avg, darkMode, 1);
       charArrayIndex++;
     }
     
     canvas.getContext("2d").putImageData(imageData, 0, 0);
     outputChars();
 }
-function brightChar(avg){
+function brightChar(avg, darkMode, density){
+  const BrightCharArray = ['$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
+  console.log(BrightCharArray.length);
+  if(darkMode)
+  {
+    BrightCharArray.prototype.reverse();
+  }
+  for(let j=0; j<BrightCharArray.length; j+=density) //255/69 = 3.69
+  {
+    if(avg<(255/BrightCharArray.length)*j)
+    {
+      return BrightCharArray[j];
+    }
+  }
+  return BrightCharArray[BrightCharArray.length-1];
   
 }
 function outputChars()
@@ -62,20 +86,12 @@ function outputChars()
 }
 
 
-/* Setting up the constraint */
-var facingMode = "user"; // Can be 'user' or 'environment' to access back or front camera (NEAT!)
-var constraints = {
-  audio: false,
-  video: {
-  facingMode: "user"
-  }
-};
+
 
 /* Stream it to video element */
 navigator.mediaDevices.getUserMedia(constraints).then(function success(stream) {
   video.srcObject = stream;
-  setInterval(grabFrame, 100);
+  setInterval(grabFrame, frameRate);
 });
 
 
-document.body.appendChild(video);
