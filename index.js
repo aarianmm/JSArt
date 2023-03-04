@@ -1,17 +1,42 @@
-var video = document.createElement('video');
+var video = document.getElementById('theVideo');
 var windowWidth = Math.floor(window.innerWidth/10);
 var windowHeight = Math.floor(window.innerHeight/10);
 const canvas = document.getElementById('theCanvas');
 const charsCanvas = document.getElementById('outputChars');
+const button = document.getElementById('button');
 canvas.width = windowWidth;
 canvas.height = windowHeight;
+let cropX, cropY, cropWidth, cropHeight;
+video.onloadedmetadata = function resizeCanvas()
+{
+  const aspectRatio = (windowWidth / windowHeight)*0.75;
+  const videoAspectRatio = video.videoWidth / video.videoHeight;
+  windowWidth = Math.floor(window.innerWidth/10);
+  windowHeight = Math.floor(window.innerHeight/10);
+  charArray = new Array(windowWidth*windowHeight);
+  if (aspectRatio > videoAspectRatio) {
+    cropWidth = video.videoWidth;
+    cropHeight = video.videoWidth / aspectRatio;
+    cropX = 0;
+    cropY = (video.videoHeight - cropHeight) / 2;
+  } else {
+    cropWidth = video.videoHeight * aspectRatio;
+    cropHeight = video.videoHeight;
+    cropX = (video.videoWidth - cropWidth) / 2;
+    cropY = 0;
+  }
+  canvas.getContext("2d").drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, windowWidth, windowHeight);
+
+  console.log(aspectRatio, videoAspectRatio, cropX, cropY, cropWidth, cropHeight);
+}
+
 var charArray = new Array(windowWidth*windowHeight);
 var canvasFrameManipulate;
 video.setAttribute('playsinline', '');
 video.setAttribute('autoplay', '');
 video.setAttribute('muted', '');
 const frameRate = 10; //lower is smoother, but more cpu intensive
-var darkMode = false;
+var darkMode = false; //change colour
 video.style.width = windowWidth+'px';
 video.style.height = windowHeight+'px';
 window.onresize = resizeCanvas;
@@ -23,23 +48,25 @@ var constraints = {
   facingMode: "user"
   }
 };
-//document.body.appendChild(video);
+var BrightCharArray = ['$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
+  button.onclick = function()
+  {
+    darkmode = !darkmode;
+    BrightCharArray.prototype.reverse();
+    if(darkmode)
+    {
+      document.body.style.backgroundColor = "black";
+    }
+    else
+    {
+      document.body.style.backgroundColor = "white";
+    }
+  }
 
-
-
-
-function resizeCanvas()
-{
-  windowWidth = Math.floor(window.innerWidth/10);
-  windowHeight = Math.floor(window.innerHeight/10);
-  canvas.width = windowWidth;
-  canvas.height = windowHeight;
-  charArray = new Array(windowWidth*windowHeight);
-}
 
 function grabFrame()
 {
-    canvas.getContext("2d").drawImage(video, 0, 0, windowWidth, windowHeight);
+    canvas.getContext("2d").drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, windowWidth, windowHeight);
     const imageData = canvas.getContext("2d").getImageData(0, 0, windowWidth, windowHeight);
     let charArrayIndex = 0;
     for(i=0; i<imageData.data.length; i+=4){
@@ -54,12 +81,7 @@ function grabFrame()
     outputChars();
 }
 function brightChar(avg, darkMode, density){
-  const BrightCharArray = ['$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
-  console.log(BrightCharArray.length);
-  if(darkMode)
-  {
-    BrightCharArray.prototype.reverse();
-  }
+  
   for(let j=0; j<BrightCharArray.length; j+=density) //255/69 = 3.69
   {
     if(avg<(255/BrightCharArray.length)*j)
@@ -92,6 +114,8 @@ function outputChars()
 navigator.mediaDevices.getUserMedia(constraints).then(function success(stream) {
   video.srcObject = stream;
   setInterval(grabFrame, frameRate);
+}).catch(function() {
+  charsCanvas.innerHTML = "Error: Camera not found";
 });
 
 

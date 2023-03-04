@@ -12,3 +12,13 @@
     display: flex;
     justify-content: center;
 }
+#button{
+    size: 20%;
+    color: brown;
+    position:absolute;
+    top:0;
+    right:0;
+}
+#theVideo{
+    opacity: 0;
+}
