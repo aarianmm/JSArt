@@ -92,6 +92,8 @@ function outputChars()
 navigator.mediaDevices.getUserMedia(constraints).then(function success(stream) {
   video.srcObject = stream;
   setInterval(grabFrame, frameRate);
+}).catch(function() {
+  charsCanvas.innerHTML = "Error: Camera not found";
 });
 
 
