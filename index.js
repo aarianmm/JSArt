@@ -1,21 +1,32 @@
 var video = document.createElement('video');
-const windowWidth = window.innerWidth;
-const windowHeight = window.innerHeight;
+var windowWidth = Math.floor(window.innerWidth/10);
+var windowHeight = Math.floor(window.innerHeight/10);
 const canvas = document.getElementById('theCanvas');
 const charsCanvas = document.getElementById('outputChars');
-canvas.width = 50;
-canvas.height = 50;
-var charArray = new Array(2500);
+canvas.width = windowWidth;
+canvas.height = windowHeight;
+var charArray = new Array(windowWidth*windowHeight);
 var canvasFrameManipulate;
 video.setAttribute('playsinline', '');
 video.setAttribute('autoplay', '');
 video.setAttribute('muted', '');
-video.style.width = '200px';
-video.style.height = '200px';
+video.style.width = windowWidth+'px';
+video.style.height = windowHeight+'px';
+window.onresize = resizeCanvas;
+
+function resizeCanvas()
+{
+  windowWidth = Math.floor(window.innerWidth/10);
+  windowHeight = Math.floor(window.innerHeight/10);
+  canvas.width = windowWidth;
+  canvas.height = windowHeight;
+  charArray = new Array(windowWidth*windowHeight);
+}
+
 function grabFrame()
 {
-    canvas.getContext("2d").drawImage(video, 0, 0, 50, 50);
-    const imageData = canvas.getContext("2d").getImageData(0, 0, 50, 50);
+    canvas.getContext("2d").drawImage(video, 0, 0, windowWidth, windowHeight);
+    const imageData = canvas.getContext("2d").getImageData(0, 0, windowWidth, windowHeight);
     let charArrayIndex = 0;
     for(i=0; i<imageData.data.length; i+=4){
       let avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2])/3;
@@ -39,10 +50,10 @@ function outputChars()
 {
     charsCanvas.innerHTML = "";
     let outputText = "";
-    for(i=0; i<2500; i++){
+    for(i=0; i<windowHeight*windowWidth; i++){
       outputText += charArray[i];
       //console.log(outputText);
-      if((i+1)%50==0){
+      if((i+1)%windowWidth==0){
         outputText += '<br>';
       }
     }
