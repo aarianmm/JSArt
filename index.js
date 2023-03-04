@@ -1,4 +1,4 @@
-var video = document.createElement('video');
+var video = document.getElementById('theVideo');
 var windowWidth = Math.floor(window.innerWidth/10);
 var windowHeight = Math.floor(window.innerHeight/10);
 const canvas = document.getElementById('theCanvas');
@@ -23,7 +23,6 @@ var constraints = {
   facingMode: "user"
   }
 };
-//document.body.appendChild(video);
 
 
 
