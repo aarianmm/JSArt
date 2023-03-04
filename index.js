@@ -6,7 +6,6 @@ const charsCanvas = document.getElementById('outputChars');
 canvas.width = windowWidth;
 canvas.height = windowHeight;
 var charArray = new Array(windowWidth*windowHeight);
-var canvasFrameManipulate;
 video.setAttribute('playsinline', '');
 video.setAttribute('autoplay', '');
 video.setAttribute('muted', '');
@@ -23,6 +22,28 @@ var constraints = {
   facingMode: "user"
   }
 };
+
+const BrightCharArray = ['$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
+
+document.addEventListener('keydown', (event) => 
+{
+  console.log(event.key);
+    if(event.key == 'd'||event.key == 'D'||event.key == 'l'||event.key == 'L')
+    {
+        darkMode = !darkMode;
+        BrightCharArray.reverse();
+        if(darkMode){
+          document.body.style.backgroundColor = "black";
+          charsCanvas.style.color = "white";
+        }
+        else{
+          document.body.style.backgroundColor = "white";
+          charsCanvas.style.color = "black";
+        }
+    }
+},false);
+
+
 
 
 
@@ -45,20 +66,15 @@ function grabFrame()
       let avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2])/3;
       
 
-      charArray[charArrayIndex] = brightChar(avg, darkMode, 1);
+      charArray[charArrayIndex] = brightChar(avg, 1);
       charArrayIndex++;
     }
     
     canvas.getContext("2d").putImageData(imageData, 0, 0);
     outputChars();
 }
-function brightChar(avg, darkMode, density){
-  const BrightCharArray = ['$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
-  console.log(BrightCharArray.length);
-  if(darkMode)
-  {
-    BrightCharArray.prototype.reverse();
-  }
+function brightChar(avg, density){
+  
   for(let j=0; j<BrightCharArray.length; j+=density) //255/69 = 3.69
   {
     if(avg<(255/BrightCharArray.length)*j)
@@ -75,7 +91,6 @@ function outputChars()
     let outputText = "";
     for(i=0; i<windowHeight*windowWidth; i++){
       outputText += charArray[i];
-      //console.log(outputText);
       if((i+1)%windowWidth==0){
         outputText += '<br>';
       }
