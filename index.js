@@ -1,6 +1,4 @@
 var video = document.getElementById('theVideo');
-console.log(window.innerWidth);
-console.log(window.innerHeight);
 var windowWidth = Math.floor(window.innerWidth/10);
 var windowHeight = Math.floor(window.innerHeight/10);
 const canvas = document.getElementById('theCanvas');
@@ -8,6 +6,11 @@ const charsCanvas = document.getElementById('outputChars');
 canvas.width = windowWidth;
 canvas.height = windowHeight;
 var charArray = new Array(windowWidth*windowHeight);
+const shortPoem = "hello".toLowerCase();
+var longPoem = repeatPoem(windowWidth*windowHeight);
+var fixedPoints = new Array(windowWidth*windowHeight);
+fixedPoints.fill(false);
+var morphing = false;
 video.setAttribute('playsinline', '');
 video.setAttribute('autoplay', '');
 video.setAttribute('muted', '');
@@ -32,8 +35,28 @@ var constraints = {
   }
 };
 
-const BrightCharArray = ['$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
+const BrightCharArray = ['$','@','B','%','8','&','W','M','Z','O','0','Q','#','*','o','a','e','h','k','b','d','p','q','w','m','L','C','J','U','Y','X','z','g','s','c','v','u','n','x','r','y','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
 
+function triggerMorph(){
+  if(morphing){ //stop
+    morphing =false;
+    resizeCanvas();
+  }
+  else{ //start
+    fixedPoints = new Array(windowWidth*windowHeight);
+    fixedPoints.fill(false);
+    morphing = true;
+  }
+  console.log(morphing.toString());
+}
+
+function repeatPoem(len){
+  let fullPoem = "";
+  while(fullPoem.length<len){
+    fullPoem += shortPoem;
+  }
+  return fullPoem.substring(0, len);
+}
 
 function changeMode(){
   darkMode = !darkMode;
@@ -53,6 +76,11 @@ document.addEventListener('keydown', (event) =>
     {
         changeMode();
     }
+
+    if(event.key == 'm'||event.key == 'M')
+    {
+      triggerMorph();
+    }
 },false);
 
 charsCanvas.addEventListener('click', (event) => 
@@ -62,32 +90,56 @@ charsCanvas.addEventListener('click', (event) =>
 
 
 
-
 function resizeCanvas()
 {
-  windowWidth = Math.floor(window.innerWidth/10);
-  windowHeight = Math.floor(window.innerHeight/10);
-  canvas.width = windowWidth;
-  canvas.height = windowHeight;
-  charArray = new Array(windowWidth*windowHeight);
+  if(!morphing)
+  {
+    console.log("did it");
+    windowWidth = Math.floor(window.innerWidth/10);
+    windowHeight = Math.floor(window.innerHeight/10);
+    canvas.width = windowWidth;
+    canvas.height = windowHeight;
+    charArray = new Array(windowWidth*windowHeight);
+    fixedPoints = new Array(windowWidth*windowHeight);
+    fixedPoints.fill(false);
+    longPoem = repeatPoem(windowWidth*windowHeight);
+  }
+  else{
+    console.log("didnt");
+  }
 }
 
-function grabFrame()
+function drawFrame()
 {
-    canvas.getContext("2d").drawImage(video, 0, 0, windowWidth, windowHeight);
-    const imageData = canvas.getContext("2d").getImageData(0, 0, windowWidth, windowHeight);
-    let charArrayIndex = 0;
-    for(i=0; i<imageData.data.length; i+=4){
+  charsCanvas.innerHTML = "";
+  let outputText = "";  
+  canvas.getContext("2d").drawImage(video, 0, 0, windowWidth, windowHeight);
+  const imageData = canvas.getContext("2d").getImageData(0, 0, windowWidth, windowHeight);
+  let charArrayIndex = 0;
+  for(i=0; i<imageData.data.length; i+=4){
+    if(!fixedPoints[charArrayIndex]){
       let avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2])/3;
-      
-
-      charArray[charArrayIndex] = brightChar(avg, 1);
-      charArrayIndex++;
+      let desiredChar = brightChar(avg, 1);
+      outputText += desiredChar; //add char to output
+      if(morphing){
+        checkMerging(charArrayIndex, desiredChar);
+      }
     }
-    
-    canvas.getContext("2d").putImageData(imageData, 0, 0);
-    outputChars();
+    else{
+      outputText += longPoem[charArrayIndex];
+      
+    }
+    if((charArrayIndex+1)%windowWidth==0){
+      outputText += '<br>';
+    }
+    charArrayIndex++;
+  
+  }
+  charsCanvas.innerHTML = outputText;
+  
+  //outputChars();
 }
+
 function brightChar(avg, density){
   
   for(let j=0; j<BrightCharArray.length; j+=density) //255/69 = 3.69
@@ -100,27 +152,18 @@ function brightChar(avg, density){
   return BrightCharArray[BrightCharArray.length-1];
   
 }
-function outputChars()
-{
-    charsCanvas.innerHTML = "";
-    let outputText = "";
-    for(i=0; i<windowHeight*windowWidth; i++){
-      outputText += charArray[i];
-      if((i+1)%windowWidth==0){
-        outputText += '<br>';
-      }
-    }
-    charsCanvas.innerHTML = outputText;
 
+function checkMerging(index, desiredChar){
+  //console.log("being checked");
+  if(desiredChar == longPoem[index]){
+    fixedPoints[index] = true;  //freeze in place
+  }
 }
-
-
-
 
 /* Stream it to video element */
 navigator.mediaDevices.getUserMedia(constraints).then(function success(stream) {
   video.srcObject = stream;
-  setInterval(grabFrame, frameRate);
+  setInterval(drawFrame, frameRate);
 }).catch(function() {
   charsCanvas.innerHTML = "Error: Camera not found";
 });
