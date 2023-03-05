@@ -1,11 +1,9 @@
-#outputChars{
-    font-size: 7px;
-    font-family: monospace;
-}
 #theCanvas{
     visibility: hidden;
 }
 #outputChars{
+    font-size: 7px;
+    font-family: monospace;
     size: 100%;
     margin-top: 5%;
     align-items: center;

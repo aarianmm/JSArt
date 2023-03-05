@@ -1,12 +1,15 @@
 var video = document.getElementById('theVideo');
-var windowWidth = Math.floor(window.innerWidth/10);
-var windowHeight = Math.floor(window.innerHeight/10);
+const approxFontSize = 9;
+var windowWidth = Math.floor(window.innerWidth/approxFontSize);
+var windowHeight = Math.floor(window.innerHeight/approxFontSize);
 const canvas = document.getElementById('theCanvas');
 const charsCanvas = document.getElementById('outputChars');
+var charDensity = 1;
+var oldCharDensity = charDensity;
 canvas.width = windowWidth;
 canvas.height = windowHeight;
 var charArray = new Array(windowWidth*windowHeight);
-const shortPoem = "we become what we think about most of the time, and that's the strangest secret.".toLowerCase().replaceAll(" ","_");
+const shortPoem = "We become what we think about most of the time, and that's the strangest secret.".replaceAll(" ","_")+'_';
 console.log(shortPoem);
 var longPoem = repeatPoem(windowWidth*windowHeight);
 var fixedPoints = new Array(windowWidth*windowHeight);
@@ -36,16 +39,26 @@ var constraints = {
   }
 };
 
-const BrightCharArray = ['$','@','B','%','8','&','W','M','Z','O','0','Q','#','*','o','a','e','h','k','b','d','p','q','w','m','L','C','J','U','Y','X','z','g','s','c','v','u','n','x','r','y','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
+//var BrightCharArray = ['$','@','B','%','8','&','W','M','Z','O','0','Q','#','*','o','a','e','h','k','b','d','p','q','w','m','L','C','J','U','Y','X','z','g','s','c','v','u','n','x','r','y','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
+var BrightCharArray = ['#','@','O','0','Q','B','D','P','R','A','a','d','g','o','q','C','G','S','U','V','W','X','Y','b','c','e','f','h','i','j','k','l','m','n','p','r','s','t','u','v','w','x','y','z','*','/','|','(',')','?','-','_','+','~','!',',','"','^','`','.','I',';',':','l'];
+//var temp = [] //not sure which is better
 
+//BrightCharArray = backupCharArray;
 function triggerMorph(){
   if(morphing){ //stop
     morphing =false;
+    charDensity = oldCharDensity;
+    //BrightCharArray = temp;
+
     resizeCanvas();
   }
   else{ //start
     fixedPoints = new Array(windowWidth*windowHeight);
     fixedPoints.fill(false);
+    oldCharDensity = charDensity;
+    charDensity = 1;
+    // temp = BrightCharArray;
+    // BrightCharArray = backupCharArray;
     morphing = true;
   }
   console.log(morphing.toString());
@@ -62,6 +75,7 @@ function repeatPoem(len){
 function changeMode(){
   darkMode = !darkMode;
         BrightCharArray.reverse();
+        //backupCharArray.reverse();
         if(darkMode){
           document.body.style.backgroundColor = "black";
           charsCanvas.style.color = "white";
@@ -78,10 +92,28 @@ document.addEventListener('keydown', (event) =>
         changeMode();
     }
 
-    if(event.key == 'm'||event.key == 'M')
+    else if(event.key == 'm'||event.key == 'M')
     {
       triggerMorph();
     }
+
+    else if(charDensity>1&&(event.key == '='||event.key == '+'))
+    {
+      charDensity--;
+    }
+
+    else if(charDensity<70&&(event.key == '-'||event.key == '_'))
+    {
+      charDensity++;
+      console.log(charDensity);
+    }
+
+    // else if(event.key == 'a'||event.key == 'A') //to switch between alphabet and old chars
+    // {
+    //   temp = BrightCharArray;
+    //   BrightCharArray = backupCharArray;
+    // }
+    
 },false);
 
 charsCanvas.addEventListener('click', (event) => 
@@ -96,8 +128,8 @@ function resizeCanvas()
   if(!morphing)
   {
     console.log("did it");
-    windowWidth = Math.floor(window.innerWidth/10);
-    windowHeight = Math.floor(window.innerHeight/10);
+    windowWidth = Math.floor(window.innerWidth/approxFontSize);
+    windowHeight = Math.floor(window.innerHeight/approxFontSize);
     canvas.width = windowWidth;
     canvas.height = windowHeight;
     charArray = new Array(windowWidth*windowHeight);
@@ -120,7 +152,7 @@ function drawFrame()
   for(i=0; i<imageData.data.length; i+=4){
     if(!fixedPoints[charArrayIndex]){
       let avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2])/3;
-      let desiredChar = brightChar(avg, 1);
+      let desiredChar = brightChar(avg, charDensity);
       outputText += desiredChar; //add char to output
       if(morphing){
         checkMerging(charArrayIndex, desiredChar);
