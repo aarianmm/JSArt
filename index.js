@@ -15,6 +15,10 @@ var longPoem = repeatPoem(windowWidth*windowHeight);
 var fixedPoints = new Array(windowWidth*windowHeight);
 fixedPoints.fill(false);
 var morphing = false;
+var changingDensity = false;
+const changingDensityInterval = 1000000; //once every x frames
+const changingDensityBy = 1; //by how much each time
+var densityChangeSparcer = true;
 video.setAttribute('playsinline', '');
 video.setAttribute('autoplay', '');
 video.setAttribute('muted', '');
@@ -40,10 +44,16 @@ var constraints = {
 };
 
 //var BrightCharArray = ['$','@','B','%','8','&','W','M','Z','O','0','Q','#','*','o','a','e','h','k','b','d','p','q','w','m','L','C','J','U','Y','X','z','g','s','c','v','u','n','x','r','y','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
-var BrightCharArray = ['#','@','O','0','Q','B','D','P','R','A','a','d','g','o','q','C','G','S','U','V','W','X','Y','b','c','e','f','h','i','j','k','l','m','n','p','r','s','t','u','v','w','x','y','z','*','/','|','(',')','?','-','_','+','~','!',',','"','^','`','.','I',';',':','l'];
-//var temp = [] //not sure which is better
-
+var BrightCharArray = ['#','@','O','0','Q','B','D','P','R','A','a','d','g','o','q','C','G','S','U','V','W','X','Y','b','c','e','f','h','i','j','k','l','m','n','p','r','s','t','u','v','w','x','y','z','*','/','|','(',')','?','-','_','+','~','!',',','\'','"','^','`','.','I',';',':','l'];
+//var temp = [] //not sure which is better- need to find definite answer and sort out
 //BrightCharArray = backupCharArray;
+
+{
+  let poemWorksFeedback = poemWorks(shortPoem);
+  if(poemWorksFeedback != ""){
+    console.log("ERROR: POEM CONTAINS INACESIBLE CHARACTER - " + poemWorksFeedback);
+  }
+}
 function triggerMorph(){
   if(morphing){ //stop
     morphing =false;
@@ -74,17 +84,18 @@ function repeatPoem(len){
 
 function changeMode(){
   darkMode = !darkMode;
-        BrightCharArray.reverse();
-        //backupCharArray.reverse();
-        if(darkMode){
-          document.body.style.backgroundColor = "black";
-          charsCanvas.style.color = "white";
-        }
-        else{
-          document.body.style.backgroundColor = "white";
-          charsCanvas.style.color = "black";
-        }
+  BrightCharArray.reverse();
+  //backupCharArray.reverse();
+  if(darkMode){
+    document.body.style.backgroundColor = "black";
+    charsCanvas.style.color = "white";
+  }
+  else{
+    document.body.style.backgroundColor = "white";
+    charsCanvas.style.color = "black";
+  }
 }
+
 document.addEventListener('keydown', (event) => 
 {
     if(event.key == 'd'||event.key == 'D'||event.key == 'l'||event.key == 'L')
@@ -92,17 +103,25 @@ document.addEventListener('keydown', (event) =>
         changeMode();
     }
 
-    else if(event.key == 'm'||event.key == 'M')
+    else if(!changingDensity&&(event.key == 'm'||event.key == 'M'))
     {
       triggerMorph();
     }
 
-    else if(charDensity>1&&(event.key == '='||event.key == '+'))
-    {
-      charDensity--;
+    else if(!morphing && (event.key == 'p'||event.key == 'P')){
+      charDensity=1;
+      densityChangeSparcer = true;
+      changingDensity=!changingDensity;
+      console.log(changingDensity.toString());
     }
 
-    else if(charDensity<70&&(event.key == '-'||event.key == '_'))
+    else if(!morphing&&!changingDensity&&charDensity>1&&(event.key == '='||event.key == '+'))
+    { //if changing density, change the frame speed thing instead
+      charDensity--;
+      console.log(charDensity);
+    }
+
+    else if(!morphing&&!changingDensity&&charDensity<65&&(event.key == '-'||event.key == '_')) //set to consts later
     {
       charDensity++;
       console.log(charDensity);
@@ -127,7 +146,7 @@ function resizeCanvas()
 {
   if(!morphing)
   {
-    console.log("did it");
+    console.log("resized");
     windowWidth = Math.floor(window.innerWidth/approxFontSize);
     windowHeight = Math.floor(window.innerHeight/approxFontSize);
     canvas.width = windowWidth;
@@ -138,7 +157,7 @@ function resizeCanvas()
     longPoem = repeatPoem(windowWidth*windowHeight);
   }
   else{
-    console.log("didnt");
+    console.log("did not resize");
   }
 }
 
@@ -149,7 +168,7 @@ function drawFrame()
   canvas.getContext("2d").drawImage(video, 0, 0, windowWidth, windowHeight);
   const imageData = canvas.getContext("2d").getImageData(0, 0, windowWidth, windowHeight);
   let charArrayIndex = 0;
-  for(i=0; i<imageData.data.length; i+=4){
+  for(let i=0; i<imageData.data.length; i+=4){
     if(!fixedPoints[charArrayIndex]){
       let avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2])/3;
       let desiredChar = brightChar(avg, charDensity);
@@ -157,10 +176,13 @@ function drawFrame()
       if(morphing){
         checkMerging(charArrayIndex, desiredChar);
       }
+      else if(changingDensity && charArrayIndex%changingDensityInterval==1){
+        oscillateDensity();
+        console.log(charDensity);
+      }
     }
     else{
-      outputText += longPoem[charArrayIndex];
-      
+      outputText += longPoem[charArrayIndex]; //maintain fixed point from poem
     }
     if((charArrayIndex+1)%windowWidth==0){
       outputText += '<br>';
@@ -191,6 +213,34 @@ function checkMerging(index, desiredChar){
   if(desiredChar == longPoem[index]){
     fixedPoints[index] = true;  //freeze in place
   }
+}
+
+function oscillateDensity(index){
+  if(densityChangeSparcer){ //becoming lower quality
+    //charDensity++;
+    charDensity+=changingDensityBy;
+    if(charDensity>=35-changingDensityBy){ //boring after 51 - set to consts later
+      densityChangeSparcer = !densityChangeSparcer;
+    }
+  }
+  else{ //becoming higher quality
+    //charDensity--;
+    charDensity-=changingDensityBy;
+    if(charDensity<=changingDensityBy){
+      densityChangeSparcer = !densityChangeSparcer; //next one will break range, so switch direction
+    }
+  }
+  
+}
+
+function poemWorks(poem){
+  for(let i=0; i<shortPoem.length; i++){
+    if(!BrightCharArray.includes(poem[i])){
+      return poem[i];
+    }
+  }
+  
+  return "";
 }
 
 /* Stream it to video element */
