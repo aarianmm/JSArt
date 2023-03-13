@@ -1,13 +1,25 @@
 var video = document.getElementById('theVideo');
-console.log(window.innerWidth);
-console.log(window.innerHeight);
-var windowWidth = Math.floor(window.innerWidth/10);
-var windowHeight = Math.floor(window.innerHeight/10);
+const approxFontSize = 9;
+var windowWidth = Math.floor(window.innerWidth/approxFontSize);
+var windowHeight = Math.floor(window.innerHeight/approxFontSize);
 const canvas = document.getElementById('theCanvas');
 const charsCanvas = document.getElementById('outputChars');
+var charDensity = 1;
+var oldCharDensity = charDensity;
 canvas.width = windowWidth;
 canvas.height = windowHeight;
 var charArray = new Array(windowWidth*windowHeight);
+//const shortPoem = "We become what we think about most of the time, and that's the strangest secret.".replaceAll(" ","_")+'_';
+const shortPoem = "Ooh You can dance You can jive Having the time of your life Ooh, see that girl Watch that scene Digging the dancing queen Friday night and the lights are low Looking out for a place to go Where they play the right music Getting in the swing You come to look for a king Anybody could be that guy Night is young and the music's high With a bit of rock music Everything is fine You're in the mood for a dance And when you get the chance You are the dancing queen Young and sweet Only seventeen Dancing queen Feel the beat from the tambourine, oh yeah You can dance You can jive Having the time of your life Ooh, see that girl Watch that scene Digging the dancing queen You're a teaser, you turn 'em on Leave 'em burning and then you're gone Looking out for another Anyone will do You're in the mood for a dance And when you get the chance You are the dancing queen Young and sweet Only seventeen Dancing queen Feel the beat from the tambourine, oh yeah You can dance You can jive Having the time of your life Ooh, see that girl Watch that scene  Digging the dancing queen Digging the dancing queen".replaceAll(" ","_")+'_';
+console.log(shortPoem);
+var longPoem = repeatPoem(windowWidth*windowHeight);
+var fixedPoints = new Array(windowWidth*windowHeight);
+fixedPoints.fill(false);
+var morphing = false;
+var changingDensity = false;
+const changingDensityInterval = 1000000; //once every x frames
+const changingDensityBy = 1; //by how much each time
+var densityChangeSparcer = true;
 video.setAttribute('playsinline', '');
 video.setAttribute('autoplay', '');
 video.setAttribute('muted', '');
@@ -32,27 +44,98 @@ var constraints = {
   }
 };
 
-const BrightCharArray = ['$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
+//var BrightCharArray = ['$','@','B','%','8','&','W','M','Z','O','0','Q','#','*','o','a','e','h','k','b','d','p','q','w','m','L','C','J','U','Y','X','z','g','s','c','v','u','n','x','r','y','j','f','t','/','|','(',')','1','{','}','[',']','?','-','_','+','~','i','!','l','I',';',':',',','"','^','`','.'];
+var BrightCharArray = ['#','@','O','0','H','M','N','F','m','n','p','r','Q','J','B','D','P','K','R','A','E','a','d','g','o','q','C','G','S','U','V','W','X','Z','Y','T','L','b','c','e','f','h','i','j','k','l','s','t','u','v','w','x','y','z','*','/','|','(',')','?','-','_','+','~','!',',','\'','"','^','`','.','I',';',':','l'];
+//var BrightCharArray = [',','.','`','^','\'','-','_','~','!',';',':','I','l','i','t','f','T','L','r','c','J','u','n','v','z','j','/','(','S','m','w','G','C','Q','O','U','D','P','A','R','B','X','E','F','K','V','Y','H','N','Z','0','Q','B','D','P','R','A','a','d','g','o','q','C','G','S','U','V','W','X','Y','H','F','L','b','c','e','f','h','i','j','k','l','m','n','p','r','s','t','u','v','w','x','y','z','*','|',')','?','+',',','"','^','`'];
 
+//var temp = [] //not sure which is better- need to find definite answer and sort out
+//BrightCharArray = backupCharArray;
+
+{
+  let poemWorksFeedback = poemWorks(shortPoem);
+  if(poemWorksFeedback != ""){
+    console.log("ERROR: POEM CONTAINS INACESIBLE CHARACTER - " + poemWorksFeedback);
+  }
+}
+function triggerMorph(){
+  if(morphing){ //stop
+    morphing =false;
+    charDensity = oldCharDensity;
+    //BrightCharArray = temp;
+
+    resizeCanvas();
+  }
+  else{ //start
+    fixedPoints = new Array(windowWidth*windowHeight);
+    fixedPoints.fill(false);
+    oldCharDensity = charDensity;
+    charDensity = 1;
+    // temp = BrightCharArray;
+    // BrightCharArray = backupCharArray;
+    morphing = true;
+  }
+  console.log(morphing.toString());
+}
+
+function repeatPoem(len){
+  let fullPoem = "";
+  while(fullPoem.length<len){
+    fullPoem += shortPoem;
+  }
+  return fullPoem.substring(0, len);
+}
 
 function changeMode(){
   darkMode = !darkMode;
-        BrightCharArray.reverse();
-        if(darkMode){
-          document.body.style.backgroundColor = "black";
-          charsCanvas.style.color = "white";
-        }
-        else{
-          document.body.style.backgroundColor = "white";
-          charsCanvas.style.color = "black";
-        }
+  BrightCharArray.reverse();
+  //backupCharArray.reverse();
+  if(darkMode){
+    document.body.style.backgroundColor = "black";
+    charsCanvas.style.color = "white";
+  }
+  else{
+    document.body.style.backgroundColor = "white";
+    charsCanvas.style.color = "black";
+  }
 }
+
 document.addEventListener('keydown', (event) => 
 {
     if(event.key == 'd'||event.key == 'D'||event.key == 'l'||event.key == 'L')
     {
         changeMode();
     }
+
+    else if(!changingDensity&&(event.key == 'm'||event.key == 'M'))
+    {
+      triggerMorph();
+    }
+
+    else if(!morphing && (event.key == 'p'||event.key == 'P')){
+      charDensity=1;
+      densityChangeSparcer = true;
+      changingDensity=!changingDensity;
+      console.log(changingDensity.toString());
+    }
+
+    else if(!morphing&&!changingDensity&&charDensity>1&&(event.key == '='||event.key == '+'))
+    { //if changing density, change the frame speed thing instead
+      charDensity--;
+      console.log(charDensity);
+    }
+
+    else if(!morphing&&!changingDensity&&charDensity<65&&(event.key == '-'||event.key == '_')) //set to consts later
+    {
+      charDensity++;
+      console.log(charDensity);
+    }
+
+    // else if(event.key == 'a'||event.key == 'A') //to switch between alphabet and old chars
+    // {
+    //   temp = BrightCharArray;
+    //   BrightCharArray = backupCharArray;
+    // }
+    
 },false);
 
 charsCanvas.addEventListener('click', (event) => 
@@ -62,32 +145,59 @@ charsCanvas.addEventListener('click', (event) =>
 
 
 
-
 function resizeCanvas()
 {
-  windowWidth = Math.floor(window.innerWidth/10);
-  windowHeight = Math.floor(window.innerHeight/10);
-  canvas.width = windowWidth;
-  canvas.height = windowHeight;
-  charArray = new Array(windowWidth*windowHeight);
+  if(!morphing)
+  {
+    console.log("resized");
+    windowWidth = Math.floor(window.innerWidth/approxFontSize);
+    windowHeight = Math.floor(window.innerHeight/approxFontSize);
+    canvas.width = windowWidth;
+    canvas.height = windowHeight;
+    charArray = new Array(windowWidth*windowHeight);
+    fixedPoints = new Array(windowWidth*windowHeight);
+    fixedPoints.fill(false);
+    longPoem = repeatPoem(windowWidth*windowHeight);
+  }
+  else{
+    console.log("did not resize");
+  }
 }
 
-function grabFrame()
+function drawFrame()
 {
-    canvas.getContext("2d").drawImage(video, 0, 0, windowWidth, windowHeight);
-    const imageData = canvas.getContext("2d").getImageData(0, 0, windowWidth, windowHeight);
-    let charArrayIndex = 0;
-    for(i=0; i<imageData.data.length; i+=4){
+  charsCanvas.innerHTML = "";
+  let outputText = "";  
+  canvas.getContext("2d").drawImage(video, 0, 0, windowWidth, windowHeight);
+  const imageData = canvas.getContext("2d").getImageData(0, 0, windowWidth, windowHeight);
+  let charArrayIndex = 0;
+  for(let i=0; i<imageData.data.length; i+=4){
+    if(!fixedPoints[charArrayIndex]){
       let avg = (imageData.data[i] + imageData.data[i+1] + imageData.data[i+2])/3;
-      
-
-      charArray[charArrayIndex] = brightChar(avg, 1);
-      charArrayIndex++;
+      let desiredChar = brightChar(avg, charDensity);
+      outputText += desiredChar; //add char to output
+      if(morphing){
+        checkMerging(charArrayIndex, desiredChar);
+      }
+      else if(changingDensity && charArrayIndex%changingDensityInterval==1){
+        oscillateDensity();
+        console.log(charDensity);
+      }
     }
-    
-    canvas.getContext("2d").putImageData(imageData, 0, 0);
-    outputChars();
+    else{
+      outputText += longPoem[charArrayIndex]; //maintain fixed point from poem
+    }
+    if((charArrayIndex+1)%windowWidth==0){
+      outputText += '<br>';
+    }
+    charArrayIndex++;
+  
+  }
+  charsCanvas.innerHTML = outputText;
+  
+  //outputChars();
 }
+
 function brightChar(avg, density){
   
   for(let j=0; j<BrightCharArray.length; j+=density) //255/69 = 3.69
@@ -100,27 +210,46 @@ function brightChar(avg, density){
   return BrightCharArray[BrightCharArray.length-1];
   
 }
-function outputChars()
-{
-    charsCanvas.innerHTML = "";
-    let outputText = "";
-    for(i=0; i<windowHeight*windowWidth; i++){
-      outputText += charArray[i];
-      if((i+1)%windowWidth==0){
-        outputText += '<br>';
-      }
-    }
-    charsCanvas.innerHTML = outputText;
 
+function checkMerging(index, desiredChar){
+  //console.log("being checked");
+  if(desiredChar == longPoem[index]){
+    fixedPoints[index] = true;  //freeze in place
+  }
 }
 
+function oscillateDensity(index){
+  if(densityChangeSparcer){ //becoming lower quality
+    //charDensity++;
+    charDensity+=changingDensityBy;
+    if(charDensity>=35-changingDensityBy){ //boring after 51 - set to consts later
+      densityChangeSparcer = !densityChangeSparcer;
+    }
+  }
+  else{ //becoming higher quality
+    //charDensity--;
+    charDensity-=changingDensityBy;
+    if(charDensity<=changingDensityBy){
+      densityChangeSparcer = !densityChangeSparcer; //next one will break range, so switch direction
+    }
+  }
+  
+}
 
-
+function poemWorks(poem){
+  for(let i=0; i<shortPoem.length; i++){
+    if(!BrightCharArray.includes(poem[i])){
+      return poem[i];
+    }
+  }
+  
+  return "";
+}
 
 /* Stream it to video element */
 navigator.mediaDevices.getUserMedia(constraints).then(function success(stream) {
   video.srcObject = stream;
-  setInterval(grabFrame, frameRate);
+  setInterval(drawFrame, frameRate);
 }).catch(function() {
   charsCanvas.innerHTML = "Error: Camera not found";
 });
