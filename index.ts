@@ -6,8 +6,10 @@ const canvas = document.getElementById('theCanvas');
 const charsCanvas = document.getElementById('outputChars');
 var charDensity = 1;
 var oldCharDensity = charDensity;
-canvas.width = windowWidth;
-canvas.height = windowHeight;
+canvas?.setAttribute('width', windowWidth.toString());
+canvas?.setAttribute('height', windowHeight.toString());
+//canvas.width = windowWidth;
+//canvas.height = windowHeight;
 var charArray = new Array(windowWidth*windowHeight);
 //const shortPoem = "We become what we think about most of the time, and that's the strangest secret.".replaceAll(" ","_")+'_';
 const shortPoem = "Ooh You can dance You can jive Having the time of your life Ooh, see that girl Watch that scene Digging the dancing queen Friday night and the lights are low Looking out for a place to go Where they play the right music Getting in the swing You come to look for a king Anybody could be that guy Night is young and the music's high With a bit of rock music Everything is fine You're in the mood for a dance And when you get the chance You are the dancing queen Young and sweet Only seventeen Dancing queen Feel the beat from the tambourine, oh yeah You can dance You can jive Having the time of your life Ooh, see that girl Watch that scene Digging the dancing queen You're a teaser, you turn 'em on Leave 'em burning and then you're gone Looking out for another Anyone will do You're in the mood for a dance And when you get the chance You are the dancing queen Young and sweet Only seventeen Dancing queen Feel the beat from the tambourine, oh yeah You can dance You can jive Having the time of your life Ooh, see that girl Watch that scene  Digging the dancing queen Digging the dancing queen".replaceAll(" ","_")+'_';
@@ -20,9 +22,9 @@ var changingDensity = false;
 const changingDensityInterval = 1000000; //once every x frames
 const changingDensityBy = 1; //by how much each time
 var densityChangeSparcer = true;
-video.setAttribute('playsinline', '');
-video.setAttribute('autoplay', '');
-video.setAttribute('muted', '');
+video?.setAttribute('playsinline', '');
+video?.setAttribute('autoplay', '');
+video?.setAttribute('muted', '');
 const frameRate = 10; //lower is smoother, but more cpu intensive
 // window.mobileAndTabletCheck = function() //doesnt work with ipad UGH
 // {   
@@ -32,8 +34,11 @@ const frameRate = 10; //lower is smoother, but more cpu intensive
 // };
 //const mobile = window.mobileAndTabletCheck();
 var darkMode = false;
-video.style.width = windowWidth+'px';
-video.style.height = windowHeight+'px';
+if(typeof(video) != 'undefined' && video != null){
+  video.style.width = windowWidth+'px';
+  video.style.height = windowHeight+'px';
+}
+
 window.onresize = resizeCanvas;
 /* Setting up the constraint */
 var facingMode = "user"; // Can be 'user' or 'environment' to access back or front camera (NEAT!)
@@ -89,11 +94,11 @@ function changeMode(){
   darkMode = !darkMode;
   BrightCharArray.reverse();
   //backupCharArray.reverse();
-  if(darkMode){
+  if(typeof charsCanvas != 'undefined' && charsCanvas != null && darkMode){
     document.body.style.backgroundColor = "black";
     charsCanvas.style.color = "white";
   }
-  else{
+  else if(typeof charsCanvas != 'undefined' && charsCanvas != null){
     document.body.style.backgroundColor = "white";
     charsCanvas.style.color = "black";
   }
@@ -138,7 +143,7 @@ document.addEventListener('keydown', (event) =>
     
 },false);
 
-charsCanvas.addEventListener('click', (event) => 
+charsCanvas?.addEventListener('click', (event) => 
 {
   changeMode(); //should be if(mobile) but it doesn't work with ipad
 },false);
@@ -152,8 +157,8 @@ function resizeCanvas()
     console.log("resized");
     windowWidth = Math.floor(window.innerWidth/approxFontSize);
     windowHeight = Math.floor(window.innerHeight/approxFontSize);
-    canvas.width = windowWidth;
-    canvas.height = windowHeight;
+    canvas?.setAttribute('width', windowWidth.toString());
+    canvas?.setAttribute('height', windowHeight.toString());
     charArray = new Array(windowWidth*windowHeight);
     fixedPoints = new Array(windowWidth*windowHeight);
     fixedPoints.fill(false);
