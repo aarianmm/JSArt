@@ -1,4 +1,4 @@
-#JSArt
+# JSArt
 1. The larger the screen (higher resolution) the better, so use a monitor.
 2. Use keys '**D**’ or '**L**’ or click the screen to toggle between light and dark mode.
 3. Use keys '**+**' and '**-**' to change the contrast.
